@@ -61,7 +61,6 @@ public class GoodsController {
 	public String detail(MiaoshaUser user, Model model,
 						 @PathVariable("goodsId")long goodsId){
     	//snowflake
-		model.addAttribute("user", user);
 		GoodsVo goods = goodsService.getGoodsVoByGoodsId(goodsId);
 		model.addAttribute("goods", goods);
 
@@ -71,7 +70,6 @@ public class GoodsController {
 
 		int miaoshaStatus = 0;
 		int remainSeconds = 0;
-		int remainEndSeconds = (int)((endAt-now)/1000);
 
 		if(now < startAt){     //秒杀没开始，倒计时
 			miaoshaStatus = 0;
@@ -84,9 +82,9 @@ public class GoodsController {
 			remainSeconds = 0;
 		}
 
+		model.addAttribute("user", user);
 		model.addAttribute("miaoshaStatus",miaoshaStatus);
 		model.addAttribute("remainSeconds",remainSeconds);
-		model.addAttribute("remainEndSeconds",remainEndSeconds);
 
 		return "goods_detail";
 	}
