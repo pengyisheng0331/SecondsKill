@@ -43,7 +43,7 @@ public class MiaoshaController {
     private MiaoshaService miaoshaService;
 
     /**
-     * @description: 商品秒杀
+     * @description: 商品秒杀 QPS:286
      * @param user
      * @param model
      * @param goodsId

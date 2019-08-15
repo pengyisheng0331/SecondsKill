@@ -32,7 +32,7 @@ public class GoodsController {
 
 
 	/**
-	 * @description: 商品列表页
+	 * @description: 商品列表页  2000*5 QPS:240
 	 * @param user
 	 * @param model
 	 * @return: java.lang.String

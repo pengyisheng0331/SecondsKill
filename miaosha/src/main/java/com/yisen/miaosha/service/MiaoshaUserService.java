@@ -70,7 +70,7 @@ public class MiaoshaUserService {
 	 * @author: yisen
 	 * @time: 2019/8/9 14:49
 	 */
-	public boolean login(HttpServletResponse response, LoginVo loginVo) {
+	public String login(HttpServletResponse response, LoginVo loginVo) {
 		if(loginVo == null) {
 			throw new GlobalException(CodeMsg.SERVER_ERROR);
 		}
@@ -91,7 +91,7 @@ public class MiaoshaUserService {
 		//生成cookie，同时保存到redis
 		String token= UUIDUtil.uuid();
 		addCookie(response, token, user);
-		return true;
+		return token;
 	}
 
 
