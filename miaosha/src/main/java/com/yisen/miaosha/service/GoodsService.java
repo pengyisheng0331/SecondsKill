@@ -49,10 +49,11 @@ public class GoodsService {
      * @author: yisen
      * @time: 2019/8/10 22:39
      */
-    public void reduceStock(GoodsVo goods) {
+    public boolean reduceStock(GoodsVo goods) {
         MiaoshaGoods g = new MiaoshaGoods();
         g.setGoodsId(goods.getId());
-        g.setStockCount(goods.getGoodsStock()-1);
-        goodsDao.reduceStock(g);
+        //g.setStockCount(goods.getGoodsStock()-1);
+        int result = goodsDao.reduceStock(g);
+        return result==1?true:false;
     }
 }

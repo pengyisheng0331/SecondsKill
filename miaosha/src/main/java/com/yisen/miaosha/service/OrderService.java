@@ -5,6 +5,8 @@ import com.yisen.miaosha.dao.OrderDao;
 import com.yisen.miaosha.domain.MiaoshaOrder;
 import com.yisen.miaosha.domain.MiaoshaUser;
 import com.yisen.miaosha.domain.OrderInfo;
+import com.yisen.miaosha.redis.OrderKey;
+import com.yisen.miaosha.redis.RedisService;
 import com.yisen.miaosha.vo.GoodsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,9 @@ public class OrderService {
     @Autowired
     private OrderDao orderDao;
 
+    @Autowired
+    RedisService redisService;
+
     /**
      * @description: 获得秒杀订单
      * @param userId
@@ -32,8 +37,11 @@ public class OrderService {
      * @author: yisen
      * @time: 2019/8/10 22:36
      */
-    public MiaoshaOrder getMiaoshaOrderByUserIdAndGoodsId(long userId, long goodsId) {
-        return orderDao.getMiaoshaOrderByUserIdAndGoodsId(userId,goodsId);
+
+    public MiaoshaOrder getMiaoshaOrderByUserIdGoodsId(long userId, long goodsId) {
+        //return orderDao.getMiaoshaOrderByUserIdGoodsId(userId, goodsId);
+        //从缓存中查找
+        return redisService.get(OrderKey.getMiaoshaOrderByUidGid, ""+userId+"_"+goodsId, MiaoshaOrder.class);
     }
 
     /**
@@ -57,16 +65,24 @@ public class OrderService {
         orderInfo.setOrderChannel(1); //pc
         orderInfo.setStatus(0); //未支付
         orderInfo.setUserId(user.getId());
-        long orderId = orderDao.insertOrderInfo(orderInfo);
+        //long orderId = orderDao.insertOrderInfo(orderInfo); 不能这样写，返回值不是id
+        orderDao.insertOrderInfo(orderInfo);
 
         //插入miaosha_order
         MiaoshaOrder miaoshaOrder = new MiaoshaOrder();
-        miaoshaOrder.setOrderId(orderId);
+        miaoshaOrder.setOrderId(orderInfo.getId());
         miaoshaOrder.setUserId(user.getId());
         miaoshaOrder.setGoodsId(goods.getId());
         orderDao.insertMiaoshaOrder(miaoshaOrder);
 
+        //将MiaoshaOrder放入缓存
+        redisService.set(OrderKey.getMiaoshaOrderByUidGid, ""+user.getId()+"_"+goods.getId(), miaoshaOrder);
+
         return orderInfo;
 
+    }
+
+    public OrderInfo getOrderById(long orderId) {
+        return orderDao.getOrderById(orderId);
     }
 }

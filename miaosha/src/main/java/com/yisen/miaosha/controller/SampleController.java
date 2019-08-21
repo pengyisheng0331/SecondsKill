@@ -1,6 +1,7 @@
 package com.yisen.miaosha.controller;
 
 import com.yisen.miaosha.domain.User;
+import com.yisen.miaosha.rabbitmq.MQSender;
 import com.yisen.miaosha.redis.RedisService;
 import com.yisen.miaosha.redis.UserKey;
 import com.yisen.miaosha.result.CodeMsg;
@@ -21,6 +22,18 @@ public class SampleController {
 
     @Autowired
     RedisService redisService;
+
+    @Autowired
+    MQSender mqSender;
+
+//    @RequestMapping("/mq")
+//    @ResponseBody
+//    public Result<String> mq(){
+//        mqSender.send("hello imooc!");
+//        return Result.success("...");
+//    }
+
+
 
     @RequestMapping("/thymeleaf")
     public String  thymeleaf(Model model) {

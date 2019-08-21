@@ -37,9 +37,38 @@ public class MiaoshaUserService {
 	 * @time: 2019/8/9 14:50
 	 */
 	public MiaoshaUser getById(long id) {
-		return miaoshaUserDao.getById(id);
+		//取缓存
+		MiaoshaUser user = redisService.get(MiaoshaUserKey.getById, ""+id, MiaoshaUser.class);
+		if(user != null) {
+			return user;
+		}
+		//取数据库
+		user = miaoshaUserDao.getById(id);
+		if(user != null) {
+			redisService.set(MiaoshaUserKey.getById, ""+id, user);
+		}
+		return user;
 	}
-	
+
+	// http://blog.csdn.net/tTU1EvLDeLFq5btqiK/article/details/78693323
+	public boolean updatePassword(String token, long id, String formPass) {
+		//取user
+		MiaoshaUser user = getById(id);
+		if(user == null) {
+			throw new GlobalException(CodeMsg.MOBILE_NOT_EXIST);
+		}
+		//更新数据库
+		MiaoshaUser toBeUpdate = new MiaoshaUser();
+		toBeUpdate.setId(id);
+		toBeUpdate.setPassword(MD5Util.formPassToDBPass(formPass, user.getSalt()));
+		miaoshaUserDao.update(toBeUpdate);
+		//处理缓存 删除redis缓存
+		redisService.delete(MiaoshaUserKey.getById, ""+id);
+		user.setPassword(toBeUpdate.getPassword());
+		//更新token
+		redisService.set(MiaoshaUserKey.token, token, user);
+		return true;
+	}
 
 	/**
 	 * @description: 在redis中查找token，通过token获取MiaoshaUser对象
