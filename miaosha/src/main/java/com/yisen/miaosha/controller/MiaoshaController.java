@@ -1,10 +1,12 @@
 package com.yisen.miaosha.controller;
 
+import com.yisen.miaosha.access.AccessLimit;
 import com.yisen.miaosha.domain.MiaoshaOrder;
 import com.yisen.miaosha.domain.MiaoshaUser;
 import com.yisen.miaosha.domain.OrderInfo;
 import com.yisen.miaosha.rabbitmq.MQSender;
 import com.yisen.miaosha.rabbitmq.MiaoshaMessage;
+import com.yisen.miaosha.redis.AccessKey;
 import com.yisen.miaosha.redis.GoodsKey;
 import com.yisen.miaosha.redis.RedisService;
 import com.yisen.miaosha.result.CodeMsg;
@@ -20,7 +22,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 
@@ -148,20 +154,57 @@ public class MiaoshaController implements InitializingBean {
         return Result.success(result);
     }
 
+    @AccessLimit(seconds=5, maxCount=5, needLogin=true)
     @RequestMapping(value="/path", method=RequestMethod.GET)
     @ResponseBody
-    public Result<String> getMiaoshaPath(MiaoshaUser user,
-                                         @RequestParam("goodsId")long goodsId
+    public Result<String> getMiaoshaPath(HttpServletRequest request,
+                                         MiaoshaUser user,
+                                         @RequestParam("goodsId")long goodsId,
+                                         @RequestParam(value="verifyCode", defaultValue="0")int verifyCode
     ) {
         if(user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
-      /*  boolean check = miaoshaService.checkVerifyCode(user, goodsId, verifyCode);
+//        //限流 , 查询访问次数
+//        String uri = request.getRequestURI();
+//        String key = uri + "_" + user.getId();
+//        Integer count = redisService.get(AccessKey.access, key, Integer.class);
+//        if(count == null){
+//            redisService.set(AccessKey.access,key,1);
+//        }else if(count < 5){
+//            redisService.incr(AccessKey.access,key);
+//        }else{
+//            return  Result.error(CodeMsg.ACCESS_LIMIT_REACHED);
+//        }
+
+        //校验验证码
+        boolean check = miaoshaService.checkVerifyCode(user, goodsId, verifyCode);
         if(!check) {
             return Result.error(CodeMsg.REQUEST_ILLEGAL);
-        }*/
+        }
+        //生成秒杀接口
         String path  = miaoshaService.createMiaoshaPath(user, goodsId);
         return Result.success(path);
+    }
+
+    @RequestMapping(value="/verifyCode", method=RequestMethod.GET)
+    @ResponseBody
+    public Result<String> getMiaoshaVerifyCod(HttpServletResponse response, MiaoshaUser user,
+                                              @RequestParam("goodsId")long goodsId) {
+        if(user == null) {
+            return Result.error(CodeMsg.SESSION_ERROR);
+        }
+        try {
+            BufferedImage image  = miaoshaService.createVerifyCode(user, goodsId);
+            OutputStream out = response.getOutputStream();
+            ImageIO.write(image, "JPEG", out);
+            out.flush();
+            out.close();
+            return null;
+        }catch(Exception e) {
+            e.printStackTrace();
+            return Result.error(CodeMsg.MIAOSHA_FAIL);
+        }
     }
 
 
